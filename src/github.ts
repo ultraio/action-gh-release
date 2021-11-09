@@ -155,7 +155,8 @@ export const upload = async (
   github: GitHub,
   url: string,
   path: string,
-  currentAssets: Array<{ id: number; name: string }>
+  currentAssets: Array<{ id: number; name: string }>,
+  maxRetries: number = config.input_retries || 1
 ): Promise<any> => {
   const [owner, repo] = config.github_repository.split("/");
   const { name, size, mime, data: body } = asset(path);
@@ -184,11 +185,24 @@ export const upload = async (
   });
   const json = await resp.json();
   if (resp.status !== 201) {
-    throw new Error(
-      `Failed to upload release asset ${name}. received status code ${
-        resp.status
-      }\n${json.message}\n${JSON.stringify(json.errors)}`
-    );
+    if (maxRetries <= 0) {
+      throw new Error(
+        `Failed to upload release asset ${name}. received status code ${
+          resp.status
+        }\n${json.message}\n${JSON.stringify(json.errors)}`
+      );
+    }
+
+    if (config.input_retries && config.input_retries > 0) {
+      console.log(
+        `Failed to upload asset ${name} (${maxRetries - 1} retries remaining).`
+      );
+
+      if (config.input_retry_interval)
+        await new Promise(r => setTimeout(r, config.input_retry_interval));
+
+      return upload(config, github, url, path, currentAssets, maxRetries - 1);
+    }
   }
   return json;
 };
@@ -196,7 +210,7 @@ export const upload = async (
 export const release = async (
   config: Config,
   releaser: Releaser,
-  maxRetries: number = config.input_retries || 3
+  maxRetries: number = 3
 ): Promise<Release> => {
   if (maxRetries <= 0) {
     console.log(`❌ Too many retries. Aborting...`);
@@ -250,9 +264,6 @@ export const release = async (
           error.response.data.errors
         )}\nretrying... (${maxRetries - 1} retries remaining)`
       );
-
-      if (config.input_retry_interval)
-        await new Promise(r => setTimeout(r, config.input_retry_interval));
 
       return release(config, releaser, maxRetries - 1);
     }
