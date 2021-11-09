@@ -59,6 +59,11 @@ export interface Releaser {
     discussion_category_name: string | undefined;
   }): Promise<{ data: Release }>;
 
+  deleteRelease(params: {
+    owner: string;
+    repo: string;
+  }): Promise<{ data: Release }>;
+
   allReleases(params: {
     owner: string;
     repo: string;
@@ -106,6 +111,13 @@ export class GitHubReleaser implements Releaser {
     discussion_category_name: string | undefined;
   }): Promise<{ data: Release }> {
     return this.github.rest.repos.updateRelease(params);
+  }
+
+  deleteRelease(params: {
+    owner: string;
+    repo: string;
+  }): Promise<{ data: Release }> {
+    return this.github.rest.repos.delete(params);
   }
 
   allReleases(params: {
@@ -178,7 +190,7 @@ export const upload = async (
 export const release = async (
   config: Config,
   releaser: Releaser,
-  maxRetries: number = 3
+  maxRetries: number = config.input_retries || 3
 ): Promise<Release> => {
   if (maxRetries <= 0) {
     console.log(`❌ Too many retries. Aborting...`);
@@ -193,6 +205,51 @@ export const release = async (
       : "");
 
   const discussion_category_name = config.input_discussion_category_name;
+
+  const createRelease = async () => {
+    const tag_name = tag;
+    const name = config.input_name || tag;
+    const body = releaseBody(config);
+    const draft = config.input_draft;
+    const prerelease = config.input_prerelease;
+    const target_commitish = config.input_target_commitish;
+    let commitMessage: string = "";
+    if (target_commitish) {
+      commitMessage = ` using commit "${target_commitish}"`;
+    }
+    console.log(
+      `👩‍🏭 Creating new GitHub release for tag ${tag_name}${commitMessage}...`
+    );
+    try {
+      let release = await releaser.createRelease({
+        owner,
+        repo,
+        tag_name,
+        name,
+        body,
+        draft,
+        prerelease,
+        target_commitish,
+        discussion_category_name
+      });
+      return release.data;
+    } catch (error) {
+      // presume a race with competing metrix runs
+      console.log(
+        `⚠️ GitHub release failed with status: ${
+          error.status
+        }\n${JSON.stringify(
+          error.response.data.errors
+        )}\nretrying... (${maxRetries - 1} retries remaining)`
+      );
+
+      if (config.input_retry_interval)
+        await new Promise(r => setTimeout(r, config.input_retry_interval));
+
+      return release(config, releaser, maxRetries - 1);
+    }
+  };
+
   try {
     // you can't get a an existing draft by tag
     // so we must find one in the list of all releases
@@ -212,6 +269,11 @@ export const release = async (
       repo,
       tag
     });
+
+    if (config.input_delete_on_existing) {
+      await releaser.deleteRelease({ owner, repo });
+      return createRelease();
+    }
 
     const release_id = existingRelease.data.id;
     let target_commitish: string;
@@ -259,43 +321,7 @@ export const release = async (
     return release.data;
   } catch (error) {
     if (error.status === 404) {
-      const tag_name = tag;
-      const name = config.input_name || tag;
-      const body = releaseBody(config);
-      const draft = config.input_draft;
-      const prerelease = config.input_prerelease;
-      const target_commitish = config.input_target_commitish;
-      let commitMessage: string = "";
-      if (target_commitish) {
-        commitMessage = ` using commit "${target_commitish}"`;
-      }
-      console.log(
-        `👩‍🏭 Creating new GitHub release for tag ${tag_name}${commitMessage}...`
-      );
-      try {
-        let release = await releaser.createRelease({
-          owner,
-          repo,
-          tag_name,
-          name,
-          body,
-          draft,
-          prerelease,
-          target_commitish,
-          discussion_category_name
-        });
-        return release.data;
-      } catch (error) {
-        // presume a race with competing metrix runs
-        console.log(
-          `⚠️ GitHub release failed with status: ${
-            error.status
-          }\n${JSON.stringify(
-            error.response.data.errors
-          )}\nretrying... (${maxRetries - 1} retries remaining)`
-        );
-        return release(config, releaser, maxRetries - 1);
-      }
+      return createRelease();
     } else {
       console.log(
         `⚠️ Unexpected error fetching GitHub release for tag ${config.github_ref}: ${error}`
