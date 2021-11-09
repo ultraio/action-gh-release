@@ -5,6 +5,8 @@ jobs:
     runs-on: ubuntu-latest
     name: A job to say hello
     steps:
+    - name: Test
+      run: cat Release.txt
     - name: Test release
       uses: ultraio/action-gh-release@testing-1
       with:
@@ -12,4 +14,4 @@ jobs:
         tag_name: testtag
         retries: 5
         retry_interval: 5000
-        files: demo.png
+        files: Release.txt
