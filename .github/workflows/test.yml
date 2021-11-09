@@ -16,5 +16,6 @@ jobs:
         tag_name: testtag
         retries: 5
         retry_interval: 5000
+        delete_on_existing: true
         files: Release.txt
 
