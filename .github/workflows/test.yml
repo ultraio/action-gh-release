@@ -6,6 +6,6 @@ jobs:
     name: A job to say hello
     steps:
     - name: Test release
-      uses: ultraio/action-gh-release@feature/retry-options-and-remove-releases
+      uses: ultraio/action-gh-release@testing-1
       with:
         name: 'Test release'
