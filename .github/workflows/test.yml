@@ -9,6 +9,6 @@ jobs:
       uses: ultraio/action-gh-release@testing-1
       with:
         name: 'Test release'
-        tag_name: testtag-${{ env.RELEASE_VERSION }}
+        tag_name: testtag
         retries: 5
         retry_interval: 5000
