@@ -12,5 +12,4 @@ jobs:
         tag_name: testtag
         retries: 5
         retry_interval: 5000
-        files: |
-          ./dist/index.js
+        files: dist/index.js
