@@ -9,3 +9,4 @@ jobs:
       uses: ultraio/action-gh-release@testing-1
       with:
         name: 'Test release'
+        tag_name: testtag-${{ env.RELEASE_VERSION }}
