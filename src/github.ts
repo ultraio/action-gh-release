@@ -64,6 +64,7 @@ export interface Releaser {
   deleteRelease(params: {
     owner: string;
     repo: string;
+    release_id: number;
   }): Promise<{ data: Release }>;
 
   allReleases(params: {
@@ -120,8 +121,9 @@ export class GitHubReleaser implements Releaser {
   deleteRelease(params: {
     owner: string;
     repo: string;
+    release_id: number;
   }): Promise<{ data: Release }> {
-    return this.github.rest.repos.delete(params);
+    return this.github.rest.repos.deleteRelease(params);
   }
 
   allReleases(params: {
@@ -276,12 +278,13 @@ export const release = async (
       tag
     });
 
+    const release_id = existingRelease.data.id;
+
     if (config.input_delete_on_existing) {
-      await releaser.deleteRelease({ owner, repo });
+      await releaser.deleteRelease({ owner, repo, release_id });
       return createRelease();
     }
 
-    const release_id = existingRelease.data.id;
     let target_commitish: string;
     if (
       config.input_target_commitish &&
