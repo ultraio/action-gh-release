@@ -10,7 +10,7 @@ jobs:
     - name: Test
       run: cat Release.txt
     - name: Test release
-      uses: ultraio/action-gh-release@testing-2
+      uses: ultraio/action-gh-release@intermediate
       with:
         name: 'Test release'
         tag_name: testtag
