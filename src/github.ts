@@ -291,6 +291,7 @@ export const release = async (
     const release_id = existingRelease.data.id;
 
     if (config.input_delete_on_existing) {
+      console.log(`Deleting existing release ${owner}/${repo}@${release_id}`);
       await releaser.deleteRelease({ owner, repo, release_id });
       return createRelease();
     }
