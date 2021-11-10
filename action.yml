@@ -44,7 +44,7 @@ inputs:
     description: "Whether to automatically generate the name and body for this release. If name is specified, the specified name will be used; otherwise, a name will be automatically generated. If body is specified, the body will be pre-pended to the automatically generated notes."
     required: false
   retries:
-    description: "The amount of times you want to try to upload a release asset. This will default to 1 which means only try once."
+    description: "The amount of times you want to try to upload a release asset. This will default to 0 which means do not retry."
     required: false
   retry_interval:
     description: "The interval in millisecond between failed asset upload attempts."

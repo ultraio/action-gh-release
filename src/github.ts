@@ -156,7 +156,7 @@ export const upload = async (
   url: string,
   path: string,
   currentAssets: Array<{ id: number; name: string }>,
-  maxRetries: number = config.input_retries || 1
+  maxRetries: number = config.input_retries || 0
 ): Promise<any> => {
   const [owner, repo] = config.github_repository.split("/");
   const { name, size, mime, data: body } = asset(path);
@@ -193,16 +193,15 @@ export const upload = async (
       );
     }
 
-    if (config.input_retries && config.input_retries > 0) {
-      console.log(
-        `Failed to upload asset ${name} (${maxRetries - 1} retries remaining).`
-      );
+    console.log(
+      `Failed to upload asset ${name} (${maxRetries - 1} retries remaining).`
+    );
 
-      if (config.input_retry_interval)
-        await new Promise(r => setTimeout(r, config.input_retry_interval));
-
-      return upload(config, github, url, path, currentAssets, maxRetries - 1);
+    if (config.input_retry_interval) {
+      await new Promise(r => setTimeout(r, config.input_retry_interval));
     }
+
+    return upload(config, github, url, path, currentAssets, maxRetries - 1);
   }
   return json;
 };
