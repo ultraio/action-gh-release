@@ -19,6 +19,9 @@ export interface Config {
   input_discussion_category_name?: string;
   input_generate_release_notes?: boolean;
   input_append_body?: boolean;
+  input_retries?: number;
+  input_retry_interval?: number;
+  input_delete_on_existing?: boolean;
 }
 
 export const uploadUrl = (url: string): string => {
@@ -70,6 +73,11 @@ export const parseConfig = (env: Env): Config => {
       env.INPUT_DISCUSSION_CATEGORY_NAME || undefined,
     input_generate_release_notes: env.INPUT_GENERATE_RELEASE_NOTES == "true",
     input_append_body: env.INPUT_APPEND_BODY == "true",
+    input_retries: env.INPUT_RETRIES ? parseInt(env.INPUT_RETRIES) : 0,
+    input_retry_interval: env.INPUT_RETRY_INTERVAL
+      ? parseInt(env.INPUT_RETRY_INTERVAL)
+      : 0,
+    input_delete_on_existing: !!env.INPUT_DELETE_ON_EXISTING
   };
 };
 
