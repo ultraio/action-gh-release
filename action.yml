@@ -46,6 +46,15 @@ inputs:
   append_body:
     description: "Append to existing body instead of overwriting it. Default is false."
     required: false
+  retries:
+    description: "The amount of times you want to try to upload a release asset. This will default to 0 which means do not retry."
+    required: false
+  retry_interval:
+    description: "The interval in millisecond between failed asset upload attempts."
+    required: false
+  delete_on_existing:
+    description: "Whether or not to delete an existing release entirely when running this action."
+    required: false
 env:
   "GITHUB_TOKEN": "As provided by Github Actions"
 outputs:
